@@ -107,8 +107,6 @@ struct State<'a> {
     color: wgpu::Color,
     selected_pipeline: usize,
     render_pipelines: Vec<wgpu::RenderPipeline>,
-    diffuse_bind_group: wgpu::BindGroup,
-    diffuse_texture: texture::Texture,
     depth_texture: texture::Texture,
     camera: Camera,
     camera_uniform: CameraUniform,
@@ -177,8 +175,6 @@ impl<'a> State<'a> {
         };
 
         surface.configure(&device, &config);
-        let diffuse_bytes = include_bytes!("happy-tree.png");
-        let diffuse_texture = texture::Texture::from_bytes(&device, &queue, diffuse_bytes, "happy-tree.png").unwrap();
 
         let texture_bind_group_layout =
             device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor{
@@ -202,23 +198,6 @@ impl<'a> State<'a> {
                 ],
                 label: Some("texture_bind_group_layout"),
             });
-
-        let diffuse_bind_group = device.create_bind_group(
-            &wgpu::BindGroupDescriptor {
-                layout: &texture_bind_group_layout,
-                entries: &[
-                    wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: wgpu::BindingResource::TextureView(&diffuse_texture.view),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 1,
-                        resource: wgpu::BindingResource::Sampler(&diffuse_texture.sampler),
-                    },
-                ],
-                label: Some("diffuse_bind_group"),
-            }
-        );
 
         let color = wgpu::Color{
             r: 0.1,
@@ -396,8 +375,6 @@ impl<'a> State<'a> {
             color,
             selected_pipeline: 0,
             render_pipelines: vec!(render_pipeline_brown),
-            diffuse_bind_group,
-            diffuse_texture,
             depth_texture,
             camera,
             camera_uniform,
@@ -504,8 +481,6 @@ impl<'a> State<'a> {
             });
 
             render_pass.set_pipeline(&self.render_pipelines[self.selected_pipeline]);
-            render_pass.set_bind_group(0, &self.diffuse_bind_group, &[]);
-            render_pass.set_bind_group(1, &self.camera_bind_group, &[]);
             render_pass.set_vertex_buffer(1, self.instance_buffer.slice(..));
             
             use model::DrawModel;
