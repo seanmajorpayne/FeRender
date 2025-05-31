@@ -9,7 +9,7 @@ use std::time::SystemTime;
 #[cfg(target_arch="wasm32")]
 use wasm_bindgen::prelude::*;
 
-use crate::camera::{Camera, CameraUniform};
+use crate::camera::{Camera, FPSCamera, OrbitalCamera, CameraUniform};
 use crate::controller::CameraController;
 use crate::model::Vertex;
 
@@ -211,7 +211,7 @@ impl<'a> State<'a> {
             source: wgpu::ShaderSource::Wgsl(include_str!("shader.wgsl").into())
         });
 
-        let camera = camera::Camera::default(config.width, config.height);
+        let camera = Camera::Orbital(camera::OrbitalCamera::default(config.width, config.height));
 
         let mut camera_uniform = CameraUniform::new();
         camera_uniform.update_view_proj(&camera);
@@ -228,7 +228,7 @@ impl<'a> State<'a> {
 
         let rotation_buffer = device.create_buffer_init(
             &wgpu::util::BufferInitDescriptor {
-                label: Some("Camera Buffer"),
+                label: Some("Rotation Buffer"),
                 contents: bytemuck::cast_slice(&[rotation_uniform]),
                 usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
             }
@@ -417,12 +417,12 @@ impl<'a> State<'a> {
                 event:
                     KeyEvent {
                         state: ElementState::Pressed,
-                        physical_key: PhysicalKey::Code(KeyCode::Space),
+                        physical_key: PhysicalKey::Code(KeyCode::KeyF),
                         ..
                     },
                 ..
             } => {
-                self.selected_pipeline ^= 1;
+                self.camera = Camera::FPS(FPSCamera::default(self.config.width, self.config.height));
                 return true;
             }
             _ => {
